@@ -478,59 +478,6 @@ class TestVideoTranscriptsDownload(TestVideo):
         with self.assertRaises(NotFoundError):
             self.item.get_transcript()
 
-        # no self.sub and no self.youtube_1_0
-        with self.assertRaises(NotFoundError):
-            self.item.get_transcript()
-
-        # no self.sub but youtube_1_0 exists with file in assets
-        good_sjson = _create_file(content=textwrap.dedent("""\
-                {
-                  "start": [
-                    270,
-                    2720
-                  ],
-                  "end": [
-                    2720,
-                    5430
-                  ],
-                  "text": [
-                    "Hi, welcome to Edx.",
-                    "Let&#39;s start with what is on your screen right now."
-                  ]
-                }
-            """))
-        _upload_sjson_file(good_sjson, self.item.location)
-        self.item.youtube_id_1_0 = _get_subs_id(good_sjson.name)
-
-        text, filename, _ = self.item.get_transcript()
-        expected_text = textwrap.dedent("""\
-            0
-            00:00:00,270 --> 00:00:02,720
-            Hi, welcome to Edx.
-
-            1
-            00:00:02,720 --> 00:00:05,430
-            Let&#39;s start with what is on your screen right now.
-
-            """)
-
-        self.assertEqual(text, expected_text)
-        self.assertEqual(filename, self.item.youtube_id_1_0 + '.srt')
-
-    def test_non_en(self):
-        self.item.transcript_language = 'uk'
-        self.non_en_file.seek(0)
-        _upload_file(self.non_en_file, self.item_descriptor.location, os.path.split(self.non_en_file.name)[1])
-
-        text, filename, _ = self.item.get_transcript()
-        expected_text = textwrap.dedent("""
-        0
-        00:00:00,12 --> 00:00:00,100
-        Привіт, edX вітає вас.
-        """)
-        self.assertEqual(text, expected_text)
-        self.assertEqual(filename, os.path.split(self.non_en_file.name)[1])
-
     def test_value_error(self):
         good_sjson = _create_file(content='bad content')
 

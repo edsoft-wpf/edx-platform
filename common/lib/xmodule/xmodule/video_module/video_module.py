@@ -39,6 +39,7 @@ from .transcripts_utils import (
     youtube_speed_dict,
     Transcript,
 )
+
 from .video_utils import create_youtube_string
 
 from xmodule.modulestore.inheritance import InheritanceKeyValueStore
@@ -370,41 +371,82 @@ class VideoModule(VideoFields, XModule):
         """
         Entry point for transcript handlers.
 
-        Request GET should contains 2-char language code for `download`
+        Request GET should contains: 2-char language code for `download`
         and additionally `videoId` for `translation`.
 
         Dispatches:
         `download`: returns SRT file.
         `translation`: returns jsoned translation text.
+            HTTP methods:
+                `delete`:  clear field, but not remove loaded transcript asset.
+                `post`: upload srt file. Think about generation of proper sjson files. Renames srt file.
+                `get`:
+
         `available_translations`: returns list of languages, for which SRT files exist. For 'en' check if SJSON exists.
+
+
+        TODO:
+            write unit and acceptance tests
+
+        1) list of acceptance tests to do:
+            - delete one field
+            - delete all fields at once
+            - upload two fiels consequently
+            - donwload file
+
+        We are RESTful here. URL names are:
+            /translation/uk
+            /download
+            /available_translation/
         """
-        if dispatch == 'translation':
-            if 'language' not in request.GET:
-                log.info("Invalid /transcript GET parameters.")
-                return Response(status=400)
 
-            lang = request.GET.get('language')
-            if lang not in ['en'] + self.transcripts.keys():
-                log.info("Video: transcript facilities are not available for given language.")
-                return Response(status=404)
-            if lang != self.transcript_language:
-                self.transcript_language = lang
+        if dispatch.startswith('translation/'):
 
-            try:
-                transcript = self.translation(request.GET.get('videoId', None))
-            except (TranscriptException, NotFoundError) as ex:
-                log.info(ex.message)
-                response = Response(status=404)
-            else:
-                response = Response(transcript)
-                response.content_type = 'application/json'
+            if request.method == 'DELETE':  # Nothing to do:  we clear field on front-end.
+                return Response(status=204)
+
+            elif request.method == 'POST':
+                try:
+                    subtitles = request.POST['file']
+                    language = request.path[-2:]  # Get the language of subtitles.
+                    upload_filename = '{}_subs_{}'.format(language, subtitle.filename)
+                    save_to_store(subtitles.file.read(), upload_filename, 'text/plain', self.location)
+                except:
+                    return Response("Failed to upload", status=400)
+                else:
+                    response = {'videoId': upload_filename, 'status': 'Success'}
+                    return Response(json.dumps(response), status=201)
+
+            elif request.method == 'GET':
+
+                # Old style: language in request.GET.get('language'), will be replaced by new RESTful: dispatch.split('/').pop(). TODO: change on front-end
+                lang = request.GET.get('language') or dispatch.split('/').pop()
+
+                if not lang:
+                    log.info("Invalid /translation GET request.")
+                    return Response(status=400)
+
+                if lang not in ['en'] + self.transcripts.keys():
+                    log.info("Video: transcript facilities are not available for given language.")
+                    return Response(status=404)
+                if lang != self.transcript_language:
+                    self.transcript_language = lang
+
+                try:
+                    transcript = self.translation(request.GET.get('videoId', None))
+                except (TranscriptException, NotFoundError) as ex:
+                    log.info(ex.message)
+                    response = Response(status=404)
+                else:
+                    response = Response(transcript)
+                    response.content_type = 'application/json'
 
         elif dispatch == 'download':
             try:
                 subs, sub_filename, mime_type = self.get_transcript(self.transcript_download_format)
             except (NotFoundError, ValueError, KeyError):
                 log.debug("Video@download exception")
-                response = Response(status=404)
+                return Response(status=404)
             else:
                 response = Response(
                     subs,
@@ -437,7 +479,6 @@ class VideoModule(VideoFields, XModule):
         else:  # unknown dispatch
             log.debug("Dispatch is not allowed")
             response = Response(status=404)
-
         return response
 
     def translation(self, youtube_id):
@@ -577,6 +618,17 @@ class VideoDescriptor(VideoFields, TabsEditingDescriptor, EmptyDataRawDescriptor
                 editable_fields['source']['non_editable'] = True
             else:
                 editable_fields.pop('source')
+
+        languages = [{'label': i[1], 'code': i[0]} for i in settings.ALL_LANGUAGES]
+        languages.sort(key=lambda l: l['label'])
+
+        editable_fields['transcripts']['languages'] = languages
+        editable_fields['transcripts']['type'] = 'VideoTranslations'
+        # @TODO: fix the link
+        try:
+            editable_fields['transcripts']['urlRoot'] = '/preview' + self.runtime.handler_url(self, 'transcript').rstrip('/?') + '/translation'
+        except NotImplementedError:
+            pass
 
         return editable_fields
 

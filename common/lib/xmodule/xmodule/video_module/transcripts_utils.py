@@ -64,6 +64,17 @@ def generate_subs(speed, source_speed, source_subs):
     return subs
 
 
+def save_to_store(content, name, mime_type, location):
+    """
+    Save named content to store by location.
+
+    Returns location of saved content.
+    """
+    content_location = asset_location(location, name)
+    content = StaticContent(content_location, name, mime_type, content)
+    contentstore().save(content)
+    return content_location
+
 def save_subs_to_store(subs, subs_id, item, language='en'):
     """
     Save transcripts into `StaticContent`.
@@ -76,13 +87,8 @@ def save_subs_to_store(subs, subs_id, item, language='en'):
     Returns: location of saved subtitles.
     """
     filedata = json.dumps(subs, indent=2)
-    mime_type = 'application/json'
     filename = subs_filename(subs_id, language)
-    content_location = Transcript.asset_location(item.location, filename)
-    content = StaticContent(content_location, filename, mime_type, filedata)
-    contentstore().save(content)
-    return content_location
-
+    return save_to_store(filedata, filename,  'application/json', item.location)
 
 def get_transcripts_from_youtube(youtube_id, settings, i18n):
     """
