@@ -48,21 +48,9 @@ To create the above chemical equation problem:
 #. In the component editor, paste the code from below.
 #. Click **Save**.
 
-====================================
-Chemical Equation Problem Code
-====================================
 
-**Required Tags**
-
-.. list-table::
-   :widths: 20 80
-
-   * - ``<customresponse>``
-     - Indicates that this problem has a custom response. The ``<customresponse>`` tags must surround the ``<chemicalequation>`` tags.
-   * - ``<chemicalequationinput>``
-     - A child of ``<customresponse>``. Indicates that the answer to this problem is a chemical equation. Must contain the ``size`` and ``label`` attributes.
-   * - ``<answer type=loncapa/python>``
-     - A child of ``<chemicalequationinput>``. Contains the Python script that grades the problem.
+Sample Chemical Equation Problem Code
+-------------------------------------
 
 .. code-block:: xml
 
@@ -101,40 +89,6 @@ Chemical Equation Problem Code
    </div>
    </solution>
   </problem>
-
-====================================
-Chemical Equation Problem Template
-====================================
-
-.. code-block:: xml
-
-  <problem>
-    <startouttext/>
-    <p>Problem text</p>
-
-    <customresponse>
-      <chemicalequationinput size="50" label="label text"/>
-      <answer type="loncapa/python">
-
-  if chemcalc.chemical_equations_equal(submission[0], 'TEXT REPRESENTING CHEMICAL EQUATION'):
-      correct = ['correct']
-  else:
-      correct = ['incorrect']
-
-      </answer>
-    </customresponse>
-
-    <endouttext/>
-  
-   <solution>
-   <div class="detailed-solution">
-   <p>Solution or Explanation Header</p>
-   <p>Solution or explanation text</p>
-   </div>
-   </solution>
-  </problem>
-
-For more information, see :ref:`chemicalequationinput` in :ref:`Appendix E`.
 
 .. _Conditional Module:
 

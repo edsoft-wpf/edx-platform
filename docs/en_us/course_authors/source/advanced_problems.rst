@@ -56,7 +56,9 @@ Create a Circuit Schematic Builder Problem
 #. In the component editor, replace the example code with your own code.
 #. Click **Save**.
 
-**Problem Code**:
+**Problem Code**
+
+To create the problem in the picture, paste the following code into the Advanced Editor.
 
 .. code-block:: xml
 
@@ -236,104 +238,6 @@ JavaScript Input Problem Code
  - The response is graded as correct if the cone is selected (yellow) when the user clicks **Check**.
 
  - Clicking **Check** or **Save** registers the problem's current state.
-
-JavaScript Input XML
-^^^^^^^^^^^^^^^^^^^^
-
-JSInput allows problem authors to turn stand-alone HTML files into problems that can be integrated into the edX platform. Since its aim is flexibility, it can be seen as the input and client-side equivalent of **CustomResponse**.
-
-A JSInput exercise creates an IFrame in a static HTML page, and passes the return value of author-specified functions to the enclosing response type (generally **CustomResponse**). JSInput can also store and retrieve state.
-
-Format
-^^^^^^^
-
-The following is the basic format of a JSInput problem:
-
-.. code-block:: xml
-
- <problem>
-        <script type="loncapa/python">
- def all_true(exp, ans): return ans == "hi"
-        </script>
-        <customresponse cfn="all_true">
-            <jsinput gradefn="gradefn" 
-                height="500"
-                get_statefn="getstate"
-                set_statefn="setstate"
-                html_file="/static/jsinput.html"/>
-        </customresponse>
- </problem>
-
-The accepted attributes are:
-
-==============  ==============  =========  ==========
-Attribute Name   Value Type     Required   Default
-==============  ==============  =========  ==========
-html_file        Url string     Yes        None
-gradefn          Function name  Yes        `gradefn`
-set_statefn      Function name  No         None
-get_statefn      Function name  No         None
-height           Integer        No         `500`
-width            Integer        No         `400`
-==============  ==============  =========  ==========
-
-
-Required Attributes
-^^^^^^^^^^^^^^^^^^^^^
-
-**html_file**
-
-The **html_file** attribute specifies the HTML file that the IFrame will point to. The HTML file
-must be located in the content directory.
-
-The IFrame is created using the sandbox attribute. Although pop-ups, scripts, and pointer locks are allowed, the IFrame cannot access its parent's attributes.
-
-The HTML file must contain a **gradefn** function that the JSInput file can access. To determine whether the **gradefn** function is accessible, in the console, make sure that **gradefn** returns the right thing. When JSInput uses the **gradefn** function, `gradefn` is called with `gradefn`.call(`obj`), where **obj** is the object-part of **gradefn**. For example, if **gradefn** is **myprog.myfn**, JSInput calls **myprog.myfun.call(myprog)**. (This is to ensure "`this`" continues to refer to what `gradefn` expects.)
-
-Aside from that, more or less anything goes. Note that currently there is no support for inheriting CSS or JavaScript from the parent (aside from the Chrome-only **seamless** attribute, which is set to True by default).
-
-**gradefn**
-
-The `gradefn` attribute specifies the name of the function that will be called when a user clicks **Check**, and that returns the student's answer. Unless both the get_statefn and set_statefn attributes are also used, this answer is passed as a string to the enclosing response type. In the customresponse example above, this means cfn will be passed this answer as `ans`.
-
-If the `gradefn` function throws an exception when a student attempts to submit a problem, the submission is aborted, and the student receives a generic alert. The alert can be customised by making the exception name `Waitfor Exception`; in that case, the alert message will be the exception message.
-
-.. important:: To make sure the student's latest answer is passed correctly, make sure that the `gradefn` function is not asynchronous. Moreover, the function should also return promptly, since currently the student has no indication that her answer is being calculated or produced.
-
-Optional Attributes
-^^^^^^^^^^^^^^^^^^^^^
-
-**set_statefn**
-
-Sometimes a problem author will want information about a student's previous answers ("state") to be saved and reloaded. If the attribute `set_statefn` is used, the function given as its value will be passed the state as a string argument whenever there is a state, and the student returns to a problem. The function has the responsibility to then use this state approriately.
-
-The state that is passed is:
-
-* The previous output of `gradefn` (i.e., the previous answer) if `get_statefn` is not defined.
-* The previous output of `get_statefn` (see below) otherwise.
-
-It is the responsibility of the iframe to do proper verification of the argument that it receives via `set_statefn`.
-
-**get_statefn**
-
-Sometimes the state and the answer are quite different. For instance, a problem that involves using a javascript program that allows the student to alter a molecule may grade based on the molecule's hydrophobicity, but from the hydrophobicity it might be incapable of restoring the state. In that case, a
-*separate* state may be stored and loaded by `set_statefn`. Note that if `get_statefn` is defined, the answer (i.e., what is passed to the enclosing response type) will be a json string with the following format:
-
-.. code-block:: xml
-
-    {
-        answer: `[answer string]`
-        state: `[state string]`
-    }
-
-
-The enclosing response type must then parse this as json.
-
-**height** and **width**
-
-The `height` and `width` attributes are straightforward: they specify the height and width of the IFrame. Both are limited by the enclosing DOM elements, so for instance there is an implicit max-width of around 900. 
-
-In the future, JSInput may attempt to make these dimensions match the HTML file's dimensions (up to the aforementioned limits), but currently it defaults to `500` and `400` for `height` and `width`, respectively.
 
 .. _Custom Python Evaluated Input:
 
@@ -682,29 +586,6 @@ To create the molecule editor that appears in the image above, you'll upload the
   </problem>
 
 
-**Problem Template**
-
-.. code-block:: xml
-
-  <problem>
-    <p>Problem text</p>
-    <customresponse>
-      <drag_and_drop_input no_labels="true" one_per_target="true" target_outline="true" img="/static/TARGET_IMAGE.gif">
-        <draggable can_reuse="true" label="methyl" id="1"/>
-        <draggable can_reuse="true" label="hydroxyl" id="2"/>
-        <target id="0" h="HEIGHT (in pixels)" w="WIDTH (in pixels)" y="Y-COORDINATE" x="X-COORDINATE"/>
-        <target id="1" h="HEIGHT (in pixels)" w="WIDTH (in pixels)" y="Y-COORDINATE" x="X-COORDINATE"/>
-      </drag_and_drop_input>
-      <answer type="loncapa/python"> correct_answer = [ {'draggables': ['2'], 'targets': ['0' ], 'rule':'unordered_equal' }, {'draggables': ['none'], 'targets': ['1' ], 'rule':'unordered_equal' }] if draganddrop.grade(submission[0], correct_answer): correct = ['correct'] else: correct = ['incorrect'] </answer>
-    </customresponse>
-    <solution>
-      <img src="/static/ANSWER_IMAGE.gif"/>
-    </solution>
-  </problem>
-
-For more information about how to create drag and drop problems, see `XML Format of Drag and Drop Input
-<https://edx.readthedocs.org/en/latest/course_data_formats/drag_and_drop/drag_and_drop_input.html>`_.
-
 .. _Image Mapped Input:
 
 Image Mapped Input
@@ -743,32 +624,7 @@ To create a image mapped input problem:
       </imageresponse>
   </problem>
 
-**Problem Template**
 
-.. code-block:: xml
-
-  <problem>
-    <startouttext/>
-      <p>In the image below, click the triangle.</p>
-    <endouttext/>
-        <imageresponse>
-         <imageinput src="IMAGE FILE PATH" width="NUMBER" height="NUMBER" rectangle="(X-AXIS,Y-AXIS)-(X-AXIS,Y-AXIS)" />
-        </imageresponse>
-  </problem>
-
-**XML Tags**
-
-.. list-table::
-   :widths: 20 80
-
-   * - ``<imageresponse>``
-     - Indicates that the problem is an image mapped input problem.
-   * - ``<imageinput>``
-     - Specifies the image file and the region in the file that the student must click. This tag includes the ``src``, ``width``, ``height``, and ``rectangle`` attributes.
-
-**XML Attribute Information**
-
-In XML_Tags.rst
 
 .. _Math Expression Input:
 
@@ -776,7 +632,6 @@ Math Expression Input
 ---------------------
 
 In math expression input problems, students enter text that represents a mathematical expression into a field, and the LMS changes that text to a symbolic expression that appears below that field. 
-
 .. image:: Images/MathExpressionInputExample.gif
  :alt: Image of math expression input problem
 
@@ -786,52 +641,7 @@ Unlike numerical input problems, which only allow integers and a few select cons
 
 When you create a math expression input problem in Studio, you'll use `MathJax <http://www.mathjax.org>`_ to change your plain text into "beautiful math." For more information about how to use MathJax in Studio, see :ref:`MathJax in Studio`.
 
-**Notes for Students**
 
-When you answer a math expression input problem, follow these guidelines.
-
-* Use standard arithmetic operation symbols.
-* Indicate multiplication explicitly by using an asterisk (*).
-* Use a caret (^) to raise to a power.
-* Use an underscore (_) to indicate a subscript.
-* Use parentheses to specify the order of operations.
-
-The LMS automatically converts the following Greek letter names into the corresponding Greek characters when a student types them in the answer field:
-
-.. list-table::
-   :widths: 20 20 20 20
-   :header-rows: 0
-
-   * - alpha
-     - beta
-     - gamma
-     - delta
-   * - epsilon
-     - varepsilon
-     - zeta
-     - eta
-   * - theta
-     - vartheta
-     - iota
-     - kappa
-   * - lambda
-     - mu
-     - nu
-     - xi
-   * - pi
-     - rho
-     - sigma
-     - tau
-   * - upsilon
-     - phi
-     - varphi
-     - chi
-   * - psi
-     - omega
-     - 
-     - 
-
-note:: ``epsilon`` is the lunate version, whereas ``varepsilon`` looks like a backward 3.
 
 Create a Math Expression Input Problem
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -890,47 +700,52 @@ To create a math expression input problem:
     </solution>
   </problem>
 
-**Template XML**
+**Notes for Students**
 
-.. code-block:: xml
+When you answer a math expression input problem, follow these guidelines.
 
-  <problem>
-    <p>Problem text</p>
-    <formularesponse type="ci" samples="VARIABLES@LOWER_BOUNDS:UPPER_BOUNDS#NUMBER_OF_SAMPLES" answer="$VoVi">
-      <responseparam type="tolerance" default="0.00001"/>
-      <formulaequationinput size="20"  label="Enter the equation"/>
-    </formularesponse>
+* Use standard arithmetic operation symbols.
+* Indicate multiplication explicitly by using an asterisk (*).
+* Use a caret (^) to raise to a power.
+* Use an underscore (_) to indicate a subscript.
+* Use parentheses to specify the order of operations.
 
-  <script type="loncapa/python">
-  VoVi = "(R_1*R_2)/R_3"
-  </script>
-
-    <solution>
-      <div class="detailed-solution">
-        <p>Explanation or Solution Header</p>
-        <p>Explanation or solution text</p>
-      </div>
-    </solution>
-  </problem>
-
-Math Expression Input XML
--------------------------
+The LMS automatically converts the following Greek letter names into the corresponding Greek characters when a student types them in the answer field:
 
 .. list-table::
-   :widths: 20 80
-   :header-rows: 1
+   :widths: 20 20 20 20
+   :header-rows: 0
 
-   * - ``<formularesponse>``
+   * - alpha
+     - beta
+     - gamma
+     - delta
+   * - epsilon
+     - varepsilon
+     - zeta
+     - eta
+   * - theta
+     - vartheta
+     - iota
+     - kappa
+   * - lambda
+     - mu
+     - nu
+     - xi
+   * - pi
+     - rho
+     - sigma
+     - tau
+   * - upsilon
+     - phi
+     - varphi
+     - chi
+   * - psi
+     - omega
      - 
-   * - ``<formulaequationinput>``
-     - This tag includes the ``size`` and ``label`` attributes.
-   * - ``<script type="loncapa/python">``
      - 
 
-
-**XML Attribute Information**
-
-See XML_Tags.rst
+note:: ``epsilon`` is the lunate version, whereas ``varepsilon`` looks like a backward 3.
 
 .. _Problem with Adaptive Hint:
 
