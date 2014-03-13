@@ -375,23 +375,21 @@ class VideoModule(VideoFields, XModule):
         and additionally `videoId` for `translation`.
 
         Dispatches.  We are RESTful here. URL names are:
-        /translation/uk
-        /download
-        /available_translation/
+            /translation/language_id
+            /download
+            /available_translations/
 
         Explanations:
 
             `download`: returns SRT or TXT file.
-            `translation`: returns jsoned translation text.
-                HTTP methods: only for self.transcripts, not for `en`.
+            `translation`: depends on HTTP methods:
                     `DELETE`:  clear field and remove loaded transcript asset for given language.
+                                        For now, works only for self.transcripts, not for `en`.
                     `POST`: upload srt file. Think about generation of proper sjson files. Renames srt file.
-                    `GET: TODO
-            `available_translations`: returns list of languages, for which SRT files exist. For 'en' check if SJSON exists.
-
-
-        TODO:
-            write unit and acceptance tests
+                                    For now, works only for self.transcripts, not for `en`.
+                    `GET: provide translation for requested language, SJSON format is sent back on success,
+            `available_translations`: returns list of languages, for which transcript files exist.
+                                                        For 'en' check if SJSON exists. For non-`en` check if SRT file exists.
 
         1) list of acceptance tests to do:
             - delete one field
@@ -402,15 +400,23 @@ class VideoModule(VideoFields, XModule):
 
         if dispatch.startswith('translation/'):
 
+            language = request.path[-2:]  # Get the language of subtitles to remove.
+
+            if not language:
+                log.info("Invalid /translation GET request.")
+                return Response(status=400)
+
+            if language not in ['en'] + self.transcripts.keys():
+                log.info("Video: transcript facilities are not available for given language.")
+                return Response(status=404)
+
             if request.method == 'DELETE':  # We will clear field on front-end on save. So we remove files here:
-                language = request.path[-2:]  # Get the language of subtitles to remove.
                 Transcript.delete_asset(self.item.location, self.transcripts[language]):
                 return Response(status=204)
 
             elif request.method == 'POST':
                 try:
                     subtitles = request.POST['file']
-                    language = request.path[-2:]  # Get the language of subtitles.
                     upload_filename = '{}_subs_{}'.format(language, subtitle.filename)
                     save_to_store(subtitles.file.read(), upload_filename, 'text/plain', self.location)
                 except:
@@ -420,20 +426,8 @@ class VideoModule(VideoFields, XModule):
                     return Response(json.dumps(response), status=201)
 
             elif request.method == 'GET':
-
-                # Old style: language in request.GET.get('language'), will be replaced by new RESTful: dispatch.split('/').pop(). TODO: change on front-end
-                lang = request.GET.get('language') or dispatch.split('/').pop()
-
-                if not lang:
-                    log.info("Invalid /translation GET request.")
-                    return Response(status=400)
-
-                if lang not in ['en'] + self.transcripts.keys():
-                    log.info("Video: transcript facilities are not available for given language.")
-                    return Response(status=404)
-                if lang != self.transcript_language:
-                    self.transcript_language = lang
-
+                if language != self.transcript_language:
+                    self.transcript_language = language
                 try:
                     transcript = self.translation(request.GET.get('videoId', None))
                 except (TranscriptException, NotFoundError) as ex:
@@ -481,6 +475,7 @@ class VideoModule(VideoFields, XModule):
         else:  # unknown dispatch
             log.debug("Dispatch is not allowed")
             response = Response(status=404)
+
         return response
 
     def translation(self, youtube_id):
