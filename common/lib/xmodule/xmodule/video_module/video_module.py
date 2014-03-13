@@ -324,9 +324,7 @@ class VideoModule(VideoFields, XModule):
 
     def get_transcript(self, transcript_format='srt'):
         """
-        Returns transcript in *.srt format and sub_id.
-
-        sub_id is self.sub or srt filename w/o extension.
+        Returns transcript, filename and MIME type.
 
         Raises:
             - NotFoundError if cannot find transcript file in storage.
@@ -341,20 +339,20 @@ class VideoModule(VideoFields, XModule):
 
         if lang == 'en':
             if self.sub:  # HTML5 case and (Youtube case for new style videos)
-                sub_id = self.sub
+                transcript_name = self.sub
             elif self.youtube_id_1_0:  # old courses
-                sub_id = self.youtube_id_1_0
+                transcript_name = self.youtube_id_1_0
             else:
                 log.debug("No subtitles for 'en' language")
                 raise ValueError
 
-            data = Transcript.asset(self.location, sub_id, lang).data
-            filename = '{}.{}'.format(sub_id, transcript_format)
+            data = Transcript.asset(self.location, transcript_name, lang).data
+            filename = '{}.{}'.format(transcript_name, transcript_format)
             content = Transcript.convert(data, 'sjson', transcript_format)
         else:
-            srt_subs = Transcript.asset(self.location, None, None, self.transcripts[lang]).data
+            data = Transcript.asset(self.location, None, None, self.transcripts[lang]).data
             filename = '{}.{}'.format(os.path.splitext(self.transcripts[lang])[0], transcript_format)
-            content = Transcript.convert(srt_subs, 'srt', transcript_format)
+            content = Transcript.convert(data, 'srt', transcript_format)
 
         if not content:
             log.debug('no subtitles produced in get_transcript')
