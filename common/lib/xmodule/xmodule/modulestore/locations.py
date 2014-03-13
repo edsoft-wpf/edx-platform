@@ -1,6 +1,6 @@
 """ Contains Locations ___ """
 
-from xmodule.modulestore.keys import CourseKey
+from xmodule.modulestore.keys import CourseKey, UsageKey
 
 class SlashSeparatedId(CourseKey):
     """Course key for old style org/course/run course identifiers"""
@@ -8,8 +8,7 @@ class SlashSeparatedId(CourseKey):
         self.org = org
         self.course = course
         self.run = run
-
-    # three local attributes: catalog name, run
+        self.offering = '/'.join([course, run])
 
     @classmethod
     def _from_string(cls, serialized):
@@ -24,5 +23,11 @@ class SlashSeparatedId(CourseKey):
     def org(self):
         return self.org
 
-    def run(self):
-        return self.run
+    def offering(self):
+        return self.offering
+
+    def make_usage_key(self, block_type, block_id):
+        raise NotImplementedError()
+
+    def make_asset_key(self, path):
+        raise NotImplementedError()
