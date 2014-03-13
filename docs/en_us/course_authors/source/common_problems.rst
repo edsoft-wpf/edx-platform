@@ -493,17 +493,19 @@ following.
 
 ::
 
-   >>How many different countries do edX students live in as of May 2013?<<
+   >>What base is the decimal numeral system in?<<
 
-   = 193 +- 5%
+   = 10
     
    [explanation]
-   As of edX's first birthday, in May 2013, edX students live in 193 different countries.
+   The decimal numerial system is base ten.
    [explanation]
 
 
 Advanced Editor
 ---------------
+
+To create this problem in the Advanced Editor, click the **Advanced** tab in the Problem component editor, and then replace the existing code with the following code.
 
 **Problem Code**:
 

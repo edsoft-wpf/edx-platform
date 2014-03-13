@@ -252,12 +252,12 @@ In custom Python-evaluated input (also called "write-your-own-grader problems" p
 
 Custom Python-evaluated input problems can include the following:
 
-:ref:`Chemical Equation`
-:ref:`Custom JavaScript Display and Grading`
-:ref:`Custom Python Evaluated Input`
-:ref:`Gene Explorer`
-:ref:`Molecule Editor`
-:ref:`Protein Builder`
+* :ref:`Chemical Equation`
+* :ref:`Custom JavaScript Display and Grading`
+* :ref:`Custom Python Evaluated Input`
+* :ref:`Gene Explorer`
+* :ref:`Molecule Editor`
+* :ref:`Protein Builder`
 
 .. list-table::
    :widths: 20 80
@@ -428,7 +428,7 @@ To create a custom Python-evaluated input problem using a ``<script>`` tag:
 #. In the component editor, replace the example code with the following code.
 #. Click **Save**.
 
-**Sample Problem XML**:
+**Problem Code**:
 
 .. code-block:: xml
 
@@ -657,18 +657,7 @@ To create a math expression input problem:
 #. In the component editor, replace the example code with your own code.
 #. Click **Save**.
 
-.. list-table::
-   :widths: 20 80
-   :header-rows: 1
-
-   * - ``<formularesponse>``
-     - 
-   * - ``<formulaequationinput>``
-     - This tag includes the ``size`` and ``label`` attributes.
-   * - ``<script type="loncapa/python">``
-     - 
-
-**Sample Problem XML**
+**Problem Code**
 
 .. code-block:: xml
 
