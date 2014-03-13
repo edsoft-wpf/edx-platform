@@ -374,15 +374,20 @@ class VideoModule(VideoFields, XModule):
         Request GET should contains: 2-char language code for `download`
         and additionally `videoId` for `translation`.
 
-        Dispatches:
-        `download`: returns SRT file.
-        `translation`: returns jsoned translation text.
-            HTTP methods:
-                `delete`:  clear field, but not remove loaded transcript asset.
-                `post`: upload srt file. Think about generation of proper sjson files. Renames srt file.
-                `get`:
+        Dispatches.  We are RESTful here. URL names are:
+        /translation/uk
+        /download
+        /available_translation/
 
-        `available_translations`: returns list of languages, for which SRT files exist. For 'en' check if SJSON exists.
+        Explanations:
+
+            `download`: returns SRT or TXT file.
+            `translation`: returns jsoned translation text.
+                HTTP methods: only for self.transcripts, not for `en`.
+                    `DELETE`:  clear field and remove loaded transcript asset for given language.
+                    `POST`: upload srt file. Think about generation of proper sjson files. Renames srt file.
+                    `GET: TODO
+            `available_translations`: returns list of languages, for which SRT files exist. For 'en' check if SJSON exists.
 
 
         TODO:
@@ -393,16 +398,13 @@ class VideoModule(VideoFields, XModule):
             - delete all fields at once
             - upload two fiels consequently
             - donwload file
-
-        We are RESTful here. URL names are:
-            /translation/uk
-            /download
-            /available_translation/
         """
 
         if dispatch.startswith('translation/'):
 
-            if request.method == 'DELETE':  # Nothing to do:  we clear field on front-end.
+            if request.method == 'DELETE':  # We will clear field on front-end on save. So we remove files here:
+                language = request.path[-2:]  # Get the language of subtitles to remove.
+                Transcript.delete_asset(self.item.location, self.transcripts[language]):
                 return Response(status=204)
 
             elif request.method == 'POST':

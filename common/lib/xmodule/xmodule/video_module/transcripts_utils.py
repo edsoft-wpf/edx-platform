@@ -199,12 +199,8 @@ def remove_subs_from_store(subs_id, item, lang='en'):
     """
     Remove from store, if transcripts content exists.
     """
-    try:
-        content = Transcript.asset(item.location, subs_id, lang)
-        contentstore().delete(content.get_id())
-        log.info("Removed subs %s from store", subs_id)
-    except NotFoundError:
-        pass
+    filename = subs_filename(subs_id, lang)
+    Transcript.delete_asset(item.location, filename)
 
 
 def generate_subs_from_source(speed_subs, subs_type, subs_filedata, item, language='en'):
@@ -509,23 +505,34 @@ class Transcript(object):
         Get asset from contentstore, asset location is built from subs_id and lang.
 
         `location` is module location.
+        Return: (type?).
         """
-        return contentstore().find(
-            Transcript.asset_location(
-                location,
-                subs_filename(subs_id, lang) if not filename else filename
-            )
-        )
+        asset_filename = subs_filename(subs_id, lang) if not filename else filename
+        return Transcript.get_asset(location, asset_filename)
 
+    @staticmethod
+    def get_asset(location, filename):
+        """
+        Return asset by location and filename.
+        """
+        return contentstore().find(Transcript.asset_location(location, filename))
 
     @staticmethod
     def asset_location(location, filename):
         """
-        Return asset location.
-
-        `location` is module location.
+        Return asset location. `location` is module location.
         """
-        return StaticContent.compute_location(
-            location.org, location.course, filename
-        )
+        return StaticContent.compute_location(location.org, location.course, filename)
+
+    @staticmethod
+    def delete_asset(location, filename):
+        """
+        Delete asset by location and filename.
+        """
+        try:
+            content = Transcript.get_asset(location, filename)
+            contentstore().delete(content.get_id())
+            log.info("Transcript asset %s was removed from store.", filename)
+        except NotFoundError:
+            pass
 
