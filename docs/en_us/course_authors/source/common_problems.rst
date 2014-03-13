@@ -1,8 +1,8 @@
 .. _Common Problems:
 
-############################
+###############
 Common Problems
-############################
+###############
 
 *Common problems* are typical problems such as multiple choice problems and other problems whose answers are simple for students to select or enter. You can create all of these problems using the Simple Editor in Studio. You don't have to use XML or switch to the Advanced Editor. (However, this section also provides sample XML code for these problems in the Advanced Editor.)
 
@@ -569,7 +569,7 @@ the instructor's specified answer exactly, including spelling and
 punctuation, we recommend that you specify more than one attempt for
 text input problems to allow for typographical errors.
 
-.. image:: Images/TextInputExample.png
+.. image:: Images/TextInputExample.gif
  :alt: Image of a text input probem
 
 ==================================
@@ -766,7 +766,7 @@ To change the response field length, change the value of the **size** attribute:
 Hints and Regular Expressions in Text Input Problems
 ====================================================
 
-You can provide hints that appear when students enter common incorrect answers in text input problems. You can also set a text input problem to allow a regular expression as an answer. To do this, you'll have to modify the problem's XML in the Advanced Editor. For more information, see :ref:`String Response`.
+You can provide hints that appear when students enter common incorrect answers in text input problems. You can also set a text input problem to allow a regular expression as an answer. To do this, you'll have to modify the problem's XML in the Advanced Editor. 
 
 The regular expression that the student enters must contain the part of the answer that the instructor specifies. For example, if an instructor has specified  ``<answer=".*example answer.*" type="regexp">``, correct answers include ``example answered``, ``two example answers``, or even ``==example answer==``, but not ``examples`` or ``example anser``.
 

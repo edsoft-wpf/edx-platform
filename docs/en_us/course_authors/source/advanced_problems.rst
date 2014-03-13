@@ -315,6 +315,7 @@ To create a custom Python-evaluated input problem using an ``<answer>`` tag:
 #. Click **Save**.
 
 .. code-block:: xml
+
     <problem>
         <p>What is the sum of 2 and 3?</p>
 
@@ -632,6 +633,7 @@ Math Expression Input
 ---------------------
 
 In math expression input problems, students enter text that represents a mathematical expression into a field, and the LMS changes that text to a symbolic expression that appears below that field. 
+
 .. image:: Images/MathExpressionInputExample.gif
  :alt: Image of math expression input problem
 
