@@ -1,8 +1,14 @@
+# -*- coding: utf-8 -*-
 # disable missing docstring
 # pylint: disable=C0111
 
+import os
+import requests
 from lettuce import world, step
 from terrain.steps import reload_the_page
+from django.conf import settings
+
+TEST_ROOT = settings.COMMON_TEST_DATA_ROOT
 
 
 @step('I have set "transcript display" to (.*)$')
@@ -68,3 +74,116 @@ def video_name_persisted(step):
         world.get_setting_entry('Display Name'),
         'Display Name', '3.4', True
     )
+
+@step('I upload transcript file(?:s)?:$')
+def upload_transcrip(step):
+    # get_xpath = lambda class_name: '//label[text()="Transcript Translations"]/following-sibling::div/a[contains(concat(" ", normalize-space(@class), " "), " {0} ")]'.format(class_name)
+    get_selector = lambda class_name: '.metadata-video-translations {}'.format(class_name)
+    get_option = lambda value: '//label[text()="Transcript Translations"]/following-sibling::div/descendant::select[last()]/option[@value="{0}"]'.format(value)
+    button = {
+        'add': get_selector('.create-action'),
+        'upload': get_selector('.upload-action'),
+        'download': get_selector('.download-action'),
+        'remove': get_selector('.remove-action'),
+    }
+    input_hidden = get_selector('.input')
+
+    if step.hashes:
+        for index, item in enumerate(step.hashes):
+            code = item['lang_code']
+            filename = item['filename']
+            world.css_click(button['add'])
+
+            world.browser.find_by_xpath(get_option(code))[0].click()
+            world.wait_for_visible(button['upload'], index=index)
+            assert world.css_find(button['upload']).last.text == "Upload"
+            assert world.css_find(input_hidden).last.value == ""
+
+            world.css_click(button['upload'], index=index)
+            upload_file(filename)
+            world.wait_for_visible(button['download'], index=index)
+            assert world.css_find(button['upload']).last.text == "Replace"
+            assert world.css_find(input_hidden).last.value == "{}_subs_{}".format(code, filename)
+
+
+@step('I can download transcript for "([^"]*)" language code, that contains text "([^"]*)"$')
+def i_can_download_transcript(_step, lang_code, text):
+    MIME_TYPE = 'application/x-subrip'
+    get_selector = lambda value: '//label[text()="Transcript Translations"]/following-sibling::div/descendant::input[@type="hidden" and contains(@value,"{0}")]/following-sibling::div/a[contains(text(), "Download")]'.format(value)
+    button = world.browser.find_by_xpath(get_selector(lang_code)).first
+    url = button['href']
+    request = ReuqestHandlerWithSessionId()
+    assert request.get(url).is_success()
+    assert request.check_header('content-type', MIME_TYPE)
+    assert (text.encode('utf-8') in request.content)
+
+
+@step('I click on remove button for "([^"]*)" language code$')
+def i_can_remove_transcript(_step, lang_code):
+    get_selector = lambda value: '//label[text()="Transcript Translations"]/following-sibling::div/descendant::input[@type="hidden" and contains(@value,"{0}")]/preceding-sibling::a'.format(value)
+    button = world.browser.find_by_xpath(get_selector(lang_code)).first
+    button.click()
+
+
+@step('I see translations for "([^"]*)"$')
+def verify_translations(_step, lang_codes_string):
+    expected = [l.strip() for l in lang_codes_string.split(',')]
+    real = [l['data-lang'] for l in world.css_find('.metadata-video-translations .remove-setting')]
+
+    assert set(expected) == set(real)
+
+@step('I confirm prompt$')
+def confirm_prompt(_step):
+    world.confirm_studio_prompt()
+
+
+@step('I click on clear button$')
+def click_on_Clear_button(_step):
+    world.css_click('.metadata-video-translations .setting-clear')
+
+
+def upload_file(filename):
+    path = os.path.join(TEST_ROOT, 'uploads/', filename)
+    world.browser.attach_file('file', os.path.abspath(path))
+    button_css = '.upload-dialog .action-upload'
+    world.css_click(button_css)
+    world.is_css_not_present('.wrapper-dialog-assetupload', wait_time=30)
+
+
+class ReuqestHandlerWithSessionId(object):
+    def get(self, url):
+        """
+        Sends a request.
+        """
+        kwargs = dict()
+
+        session_id = [{i['name']:i['value']} for i in world.browser.cookies.all() if i['name'] == u'sessionid']
+        if session_id:
+            kwargs.update({
+                'cookies': session_id[0]
+            })
+
+        response = requests.get(url, **kwargs)
+        self.response = response
+        self.status_code = response.status_code
+        self.headers = response.headers
+        self.content = response.content
+
+        return self
+
+    def is_success(self):
+        """
+        Returns `True` if the response was succeed, otherwise, returns `False`.
+        """
+        if self.status_code < 400:
+            return True
+        return False
+
+    def check_header(self, name, value):
+        """
+        Returns `True` if the response header exist and has appropriate value,
+        otherwise, returns `False`.
+        """
+        if value in self.headers.get(name, ''):
+            return True
+        return False
